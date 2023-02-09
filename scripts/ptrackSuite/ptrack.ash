@@ -1,3 +1,6 @@
+script "pTrack";
+notify Coolfood;
+
 import <TimeTracking.ash>
 import <ProfitTracking.ash>
 
