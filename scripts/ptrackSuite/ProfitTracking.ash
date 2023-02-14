@@ -86,18 +86,19 @@ int ProfitCompareItem( boolean silent, string date1, string event1, string date2
 			profit += difference*itemValue(it);
 		}
 	}
-	print("You've earned "+to_string(profit,"%,d")+" in item differences","blue");
 	if ( !silent ) {
 		sort diff by value.amount*itemValue(value.it);
-		print("top 10s (this includes items that disappeared from my mall store):");
+		print_html("<b>Top 10s (includes items disappearing from mall store):</b>");
 		for i from 0 to 10
 			if ( diff[i].amount < 0 )
 				print(diff[i].amount+" "+diff[i].it+" : "+to_string(diff[i].amount*itemValue(diff[i].it),"%,d"));
-		print("...");
-		for i from count(diff)-21 to count(diff)-1
+		print("---------------------------------");
+		for i from count(diff)-1 to count(diff)-21
 			if ( diff[i].amount > 0 )
 				print(diff[i].amount+" "+diff[i].it+" : "+to_string(diff[i].amount*itemValue(diff[i].it),"%,d"));
 	}
+	print_html("<b>Summary:</b>");
+	print("You've earned "+to_string(profit,"%,d")+" in item differences","blue");
 	return profit;
 }
 
@@ -120,8 +121,8 @@ int ProfitCompare( boolean silent, string date1, string event1, string date2, st
 		ProfitList[date1,event1,date2,event2] = diff;
 
 		map_to_file(ProfitList,"/Profit Tracking/"+my_name()+"/ProfitList.txt");
-		print("You've earned "+to_string(diff.meat,"%,d")+" liquid meat");
-		print("You've spent "+diff.adv+" adventures"+(diff.adv > 4 ? " for "+(diff.total/diff.adv)+" mpa" : ""));
+		print_html("<font color=cc5500>You've earned "+to_string(diff.meat,"%,d")+" liquid meat</font>");
+		print_html("You've spent "+diff.adv+" adventures"+(diff.adv > 4 ? " for a total (meat+item) <b>"+(diff.total/diff.adv)+" mpa</b>" : ""));
 		if ( diff.time > 0 )
 			print("From "+timestamp_to_date(meatlist[date1,event1].time,"HH:mm:ss")+" "+event1+" to "+timestamp_to_date(meatlist[date2,event2].time,"HH:mm:ss")+" "+event2+" took "+to_string(diff.time/1000/60/60,"%0,2d")+":"+to_string(diff.time/1000/60%60,"%0,2d")+":"+to_string(diff.time/1000%60,"%0,2d")+".");
 		print("You've earned a total of "+to_string(diff.total,"%,d")+" meat between "+date1+" "+event1+" and "+date2+" "+event2+".","blue");

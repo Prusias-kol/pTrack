@@ -32,7 +32,12 @@ void addBreakpoint(string name) {
 
 void compareBreakpoints(string bp1, string bp2) {
     string date = get_property("prusias_profitTracking_date");
-    compare_both(date, bp1, date, bp2);
+    compare_both(date, bp1, date, bp2, true);
+}
+
+void expressiveCompareBreakpoints(string bp1, string bp2) {
+    string date = get_property("prusias_profitTracking_date");
+    compare_both(date, bp1, date, bp2, false);
 }
 
 void pBreakfast() {
@@ -70,7 +75,7 @@ void printBreakpointListComparison() {
     compare_using_list_and_date(date);
     print_html("<font color=0000ff><b>Comparing your First and Last Breakpoints</b></font>");
     int last = count(split_map) - 1;
-    compare_both(date, split_map[0], date, split_map[last]);
+    compare_both(date, split_map[0], date, split_map[last], false);
     print_html("<font color=eda800><b>Thank you for using ptrack breakpoints wrapper</b></font>");
 }
 
@@ -85,7 +90,7 @@ void compare_using_list_and_date(string date) {
 	}
 	for it from 1 to last {
 	   event2 = split_map[it];
-	   print("Now comparing " + event1 + " and " + event2);
+	   print_html("<b>Now comparing " + event1 + " and " + event2 + "</b>");
 	   compare_both(date, event1, date, event2);
 	   event1 = event2;
 	}
@@ -97,6 +102,7 @@ void printHelp() {
     print_html("<b>breakfast</b> - Sets a breakpoint named <b><font color=eda800>start</font></b> and then runs breakfast to track breakfast profits.");
     print_html("<b>add (bp name)</b> - Adds a breakpoint name. Names must be unique and contain no spaces.");
     print_html("<b>compare (bp1 name) (bp2 name)</b> - Compares two breakpoints.");
+    print_html("<b>dcompare (bp1 name) (bp2 name)</b> - Descriptive Compare. Lists your top 10 item loss and profits.");
     print_html("<b>list</b> - List today's breakpoints.");
     print_html("<b>recap</b> - Recaps all breakpoints and their differences as well as your first and last breakpoints.");
 }
@@ -121,6 +127,15 @@ void main(string option) {
                 if(i + 2 < commands.count())
                 {
                     compareBreakpoints(commands[i+1], commands[i+2]);
+                } else {
+                    print("Please provide two valid breakpoint names", "red");
+                }
+                return;
+            case "dCompare":
+            case "dcompare":
+                if(i + 2 < commands.count())
+                {
+                    expressiveCompareBreakpoints(commands[i+1], commands[i+2]);
                 } else {
                     print("Please provide two valid breakpoint names", "red");
                 }
