@@ -145,7 +145,7 @@ int itemValue ( item it ) {
 				return itemValue($item[immense free-range mushroom])+itemValue($item[house-sized mushroom]);
             case $item[Freddy Kruegerand]:
                 //FK items low volume, extra multiplier (sellbot pricing)
-                return 0.95* max(itemValue($item[	bottle of Bloodweiser]), itemValue($item[electric Kool-Aid])) / 20;
+                return 0.95* max(itemValue($item[	bottle of Bloodweiser]), itemValue($item[electric Kool-Aid])) / 200;
             //FunFunds
             case $item[8205]:
                 return itemValue($item[one-day ticket to Dinseylandfill]) / 20;
