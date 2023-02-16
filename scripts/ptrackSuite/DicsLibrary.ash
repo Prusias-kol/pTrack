@@ -129,6 +129,8 @@ int itemValue ( item it ) {
 				return 4.5*itemValue($item[generic healing potion]);
 			case $item[bag of park garbage]:
 				return 200;
+			case $item[gathered meat clip]:
+				return 520;
 			case $item[unfinished ice sculpture]:
 				return 3*itemValue($item[snow berries])+3*itemValue($item[ice harvest]);
 			case $item[free-range mushroom]:
