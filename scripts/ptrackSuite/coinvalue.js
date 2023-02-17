@@ -1,4 +1,4 @@
-const { isCoinmasterItem, printHtml, sellsItem, mallPrice, sellPrice } = require("kolmafia");
+const { isCoinmasterItem, isAccessible, printHtml, sellsItem, mallPrice, sellPrice } = require("kolmafia");
 Item.all().forEach((i) => { if (isCoinmasterItem(i)) { mallPrice(i) }});
 
 function addCommas(nStr) {
@@ -14,7 +14,7 @@ function addCommas(nStr) {
 }
 
 groupedMap = new Map();
-for (let cm of Coinmaster.all().filter((x) => x !== Coinmaster.get("none") && x.availableTokens)) {
+for (let cm of Coinmaster.all().filter((x) => x !== Coinmaster.get("none") && x.availableTokens && isAccessible(x))) {
     if (groupedMap.has(cm.token)) {
         groupedMap.get(cm.token).push(cm)
     }
