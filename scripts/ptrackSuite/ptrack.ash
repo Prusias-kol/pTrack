@@ -105,6 +105,7 @@ void printHelp() {
     print_html("<b>dcompare (bp1 name) (bp2 name)</b> - Descriptive Compare. Lists your top 10 item loss and profits.");
     print_html("<b>list</b> - List today's breakpoints.");
     print_html("<b>recap</b> - Recaps all breakpoints and their differences as well as your first and last breakpoints.");
+    print_html("<b>coinvalue</b> - Examines all coinmaster currencies and attempts to value them.");
 }
 
 void main(string option) {
@@ -139,6 +140,10 @@ void main(string option) {
                 } else {
                     print("Please provide two valid breakpoint names", "red");
                 }
+                return;
+            case "coinValue":
+            case "coinvalue":
+                cli_execute("coinvalue");
                 return;
             case "list":
                 printBreakpointList();
