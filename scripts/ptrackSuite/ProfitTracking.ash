@@ -98,7 +98,7 @@ int ProfitCompareItem( boolean silent, string date1, string event1, string date2
 				print(diff[i].amount+" "+diff[i].it+" : "+to_string(diff[i].amount*itemValue(diff[i].it),"%,d"));
 	}
 	print_html("<b>Summary:</b>");
-	print("You've earned "+to_string(profit,"%,d")+" in item differences","blue");
+	print("You've earned "+to_string(profit,"%,d")+" in item differences","teal");
 	return profit;
 }
 
@@ -125,7 +125,7 @@ int ProfitCompare( boolean silent, string date1, string event1, string date2, st
 		print_html("You've spent "+diff.adv+" adventures"+(diff.adv > 4 ? " for a total (meat+item) <b>"+(diff.total/diff.adv)+" mpa</b>" : ""));
 		if ( diff.time > 0 )
 			print("From "+timestamp_to_date(meatlist[date1,event1].time,"HH:mm:ss")+" "+event1+" to "+timestamp_to_date(meatlist[date2,event2].time,"HH:mm:ss")+" "+event2+" took "+to_string(diff.time/1000/60/60,"%0,2d")+":"+to_string(diff.time/1000/60%60,"%0,2d")+":"+to_string(diff.time/1000%60,"%0,2d")+".");
-		print("You've earned a total of "+to_string(diff.total,"%,d")+" meat between "+date1+" "+event1+" and "+date2+" "+event2+".","blue");
+		print("You've earned a total of "+to_string(diff.total,"%,d")+" meat between "+date1+" "+event1+" and "+date2+" "+event2+".","teal");
 		print("");
 		return diff.total;
 	}
