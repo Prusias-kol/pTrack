@@ -15,7 +15,7 @@ To add a breakpoint, type `ptrack add <breakpoint name>`
 
 To list today's breakpoints (or yesterdays if you haven't yet set a breakpoint today), type `ptrack list`
 
-To compare two breakpoints (from today or yesterday if you haven't yet set a breakpoint today), type `ptrack compare <bp1> <bp2>`
+To compare two breakpoints (from today or yesterday if you haven't yet set a breakpoint today), type `ptrack compare <bp1> <bp2>`. *Replace the command with ***dcompare** *for a breakdown of your item profits/losses.*
 
 To compare all breakpoints on ptrack list, type `ptrack recap`
 
@@ -28,3 +28,8 @@ Untick breakfast on the Mafia login window.
 Then, on the top left, KolMafia -> Preferences -> Automation
 
 In the On Login section, paste `ptrack breakfast`
+
+#### In development
+- View previous days (to help compare progress across days)
+- Exclude an item from profit comparison in case of outliers
+- Compare across days?
