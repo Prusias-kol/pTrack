@@ -131,6 +131,8 @@ int itemValue ( item it ) {
 				return 200;
 			case $item[gathered meat-clip]:
 				return 520;
+			case $item[1,970 carat gold]:
+				return 20500; //Torturebot
 			case $item[unfinished ice sculpture]:
 				return 3*itemValue($item[snow berries])+3*itemValue($item[ice harvest]);
 			case $item[free-range mushroom]:
