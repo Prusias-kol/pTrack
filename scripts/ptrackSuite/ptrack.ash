@@ -30,7 +30,7 @@ void printHelp() {
     print_html("<b>list</b> - List today's breakpoints.");
     print_html("<b>recap</b> - Recaps all breakpoints and their differences as well as your first and last breakpoints.");
     print_html("<b>coinvalue</b> - Examines all coinmaster currencies and attempts to value them.");
-    print_html("<b>file compare (date1) (bp1) (date2) (bp2)</b> - Go into your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and find two breakpoints you would like to compare. File format is as follows: <font color=008080>date breakpoint.txt</font>");
+    print_html("<b>fileCompare (date1) (bp1) (date2) (bp2)</b> - Go into your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and find two breakpoints you would like to compare. File format is as follows: <font color=008080>date breakpoint.txt</font>. Do not include the .txt!");
     
     ptrackCheckUpdate();
 }
