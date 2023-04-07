@@ -12,6 +12,43 @@ void compare_using_list_and_date(string date);
 void printBreakpointList();
 void printBreakpointListComparison();
 void printHelp();
+void ptrackCheckUpdate();
+
+int version = 1;
+string[int] updates;
+updates[0] = "Update Log Added";
+updates[1] = "File compare added. Check your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and use them to compare across days!";
+
+
+void printHelp() {
+    print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
+    print_html("<b>help</b> - Prints this help list.");
+    print_html("<b>breakfast</b> - Sets a breakpoint named <b><font color=eda800>start</font></b> and then runs breakfast to track breakfast profits.");
+    print_html("<b>add (bp name)</b> - Adds a breakpoint name. Names must be unique and contain no spaces.");
+    print_html("<b>compare (bp1 name) (bp2 name)</b> - Compares two breakpoints.");
+    print_html("<b>dcompare (bp1 name) (bp2 name)</b> - Descriptive Compare. Lists your top 10 item loss and profits.");
+    print_html("<b>list</b> - List today's breakpoints.");
+    print_html("<b>recap</b> - Recaps all breakpoints and their differences as well as your first and last breakpoints.");
+    print_html("<b>coinvalue</b> - Examines all coinmaster currencies and attempts to value them.");
+    print_html("<b>file compare (date1) (bp1) (date2) (bp2)</b> - Go into your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and find two breakpoints you would like to compare. File format is as follows: <font color=008080>date breakpoint.txt</font>");
+    
+    ptrackCheckUpdate();
+}
+
+void ptrackCheckUpdate() {
+    //initialize
+    if (get_property("prusias_profitTracking_scriptVersion") == "")
+        set_property("prusias_profitTracking_scriptVersion", "-1");
+    //print updates
+    if (get_property("prusias_profitTracking_scriptVersion").to_int() != version) {
+        print_html("<font color=eda800><b>----pTrack's latest updates----</b></font>");
+        int lastUpdated = get_property("prusias_profitTracking_scriptVersion").to_int();
+        for i from (lastUpdated+1) to (version) {
+            print(updates[i]);
+        }
+        set_property("prusias_profitTracking_scriptVersion", version);
+    }
+}
 
 boolean resetDailyTracking() {
     string today = today_to_string();
@@ -77,6 +114,7 @@ void printBreakpointListComparison() {
     int last = count(split_map) - 1;
     compare_both(date, split_map[0], date, split_map[last], false);
     print_html("<font color=eda800><b>Thank you for using ptrack breakpoints wrapper</b></font>");
+    ptrackCheckUpdate();
 }
 
 void compare_using_list_and_date(string date) {
@@ -96,17 +134,7 @@ void compare_using_list_and_date(string date) {
 	}
 }
 
-void printHelp() {
-    print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
-    print_html("<b>help</b> - Prints this help list.");
-    print_html("<b>breakfast</b> - Sets a breakpoint named <b><font color=eda800>start</font></b> and then runs breakfast to track breakfast profits.");
-    print_html("<b>add (bp name)</b> - Adds a breakpoint name. Names must be unique and contain no spaces.");
-    print_html("<b>compare (bp1 name) (bp2 name)</b> - Compares two breakpoints.");
-    print_html("<b>dcompare (bp1 name) (bp2 name)</b> - Descriptive Compare. Lists your top 10 item loss and profits.");
-    print_html("<b>list</b> - List today's breakpoints.");
-    print_html("<b>recap</b> - Recaps all breakpoints and their differences as well as your first and last breakpoints.");
-    print_html("<b>coinvalue</b> - Examines all coinmaster currencies and attempts to value them.");
-}
+
 
 void main(string option) {
     string [int] commands = option.split_string("\\s+");
@@ -139,6 +167,15 @@ void main(string option) {
                     expressiveCompareBreakpoints(commands[i+1], commands[i+2]);
                 } else {
                     print("Please provide two valid breakpoint names", "red");
+                }
+                return;
+            case "filecompare":
+            case "fileCompare":
+                if(i + 4 < commands.count())
+                {
+                    compare_both(commands[i+1], commands[i+2], commands[i+3], commands[i+4], false);
+                } else {
+                    print("Please provide the following arguments: date1, breakpoint1, date2, breakpoint2", "red");
                 }
                 return;
             case "coinValue":
