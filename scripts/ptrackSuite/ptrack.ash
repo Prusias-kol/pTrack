@@ -44,7 +44,7 @@ void ptrackCheckUpdate() {
         print_html("<font color=eda800><b>----pTrack's latest updates----</b></font>");
         int lastUpdated = get_property("prusias_profitTracking_scriptVersion").to_int();
         for i from (lastUpdated+1) to (version) {
-            print(updates[i]);
+            print_html(updates[i]);
         }
         set_property("prusias_profitTracking_scriptVersion", version);
     }
