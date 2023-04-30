@@ -64,6 +64,16 @@ boolean resetDailyTracking() {
 
 void addBreakpoint(string name) {
     resetDailyTracking();
+    string[int] split_map = split_string(get_property("thoth19_event_list"), ",");
+    int last = count(split_map) -1;
+	if (last >= 1) {
+		for it from 0 to last {
+            if (split_map[it] == name) {
+                addBreakpoint(name + "1");
+                return;
+            }
+        }
+	}
     log_both_and_add(name);
 }
 
