@@ -14,11 +14,11 @@ void printBreakpointListComparison();
 void printHelp();
 void ptrackCheckUpdate();
 
-int version = 1;
+int version = 2;
 string[int] updates;
 updates[0] = "Update Log Added";
 updates[1] = "File compare added. Check your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and use them to compare across days!";
-
+updates[2] = "Ptrack will now handle duplicate breakpoint names by giving the repeat a number.";
 
 void printHelp() {
     print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
@@ -44,8 +44,9 @@ void ptrackCheckUpdate() {
         print_html("<font color=eda800><b>----pTrack's latest updates----</b></font>");
         int lastUpdated = get_property("prusias_profitTracking_scriptVersion").to_int();
         for i from (lastUpdated+1) to (version) {
-            print_html(updates[i]);
+            print_html(i + " <font color=eda800>-</font> " + updates[i]);
         }
+        print_html("<font color=eda800>---------------</font>");
         set_property("prusias_profitTracking_scriptVersion", version);
     }
 }
