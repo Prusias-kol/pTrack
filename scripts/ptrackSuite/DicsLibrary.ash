@@ -161,6 +161,8 @@ int itemValue ( item it ) {
                 return itemValue($item[one-day ticket to Conspiracy Island]) / 100;
             case $item[Wal-Mart gift certificate]:
                 return itemValue($item[one-day ticket to The Glaciest]) / 50;
+			case $item[fake hand]:
+				return 50000;
 			default:
 				if ( npc_price(it) > 0 )
 					return npc_price(it);
