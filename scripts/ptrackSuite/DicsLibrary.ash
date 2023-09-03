@@ -147,6 +147,13 @@ int itemValue ( item it ) {
 				return itemValue($item[giant free-range mushroom])+itemValue($item[mushroom slab]);
 			case $item[colossal free-range mushroom]:
 				return itemValue($item[immense free-range mushroom])+itemValue($item[house-sized mushroom]);
+			//Loathing Idol Microphone partial charges
+			case $item[11277]:
+				return itemValue($item[11263] * .75);
+			case $item[11278]:
+				return itemValue($item[11263] * .50);
+			case $item[11279]:
+				return itemValue($item[11263] * .25);
             case $item[Freddy Kruegerand]:
                 //FK items low volume, extra multiplier (sellbot pricing)
                 return 0.95* max(itemValue($item[	bottle of Bloodweiser]), itemValue($item[electric Kool-Aid])) / 200;
