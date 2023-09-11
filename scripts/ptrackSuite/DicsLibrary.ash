@@ -170,6 +170,8 @@ int itemValue ( item it ) {
 				return 0.5 * itemValue($item[Loathing Idol Microphone]);
 			case $item[Loathing Idol Microphone (25% charged)]:
 				return 0.25 * itemValue($item[Loathing Idol Microphone]);
+			case $item[Mob Penguin cellular phone]:
+				return 0;
 			default:
 				if ( npc_price(it) > 0 )
 					return npc_price(it);
