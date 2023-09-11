@@ -163,6 +163,13 @@ int itemValue ( item it ) {
                 return itemValue($item[one-day ticket to The Glaciest]) / 50;
 			case $item[fake hand]:
 				return 50000;
+			//loathing idol
+			case $item[Loathing Idol Microphone (75% charged)]:
+				return 0.75 * itemValue($item[Loathing Idol Microphone]);
+			case $item[Loathing Idol Microphone (50% charged)]:
+				return 0.5 * itemValue($item[Loathing Idol Microphone]);
+			case $item[Loathing Idol Microphone (25% charged)]:
+				return 0.25 * itemValue($item[Loathing Idol Microphone]);
 			default:
 				if ( npc_price(it) > 0 )
 					return npc_price(it);
