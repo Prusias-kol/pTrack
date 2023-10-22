@@ -107,8 +107,20 @@ int recent_price(item it) {
 int averageValue ( boolean [item] itemList );
 
 int itemValue ( item it ) {
-	if (it == $item[Mob Penguin cellular phone])
-		return 0;
+	//absolute exceptions that should override mall price
+	switch (it) {
+		//mob penguin
+		case $item[Mob Penguin cellular phone]:
+			return 0;
+		//loathing idol
+		case $item[Loathing Idol Microphone (75% charged)]:
+			return 0.75 * itemValue($item[Loathing Idol Microphone]);
+		case $item[Loathing Idol Microphone (50% charged)]:
+			return 0.5 * itemValue($item[Loathing Idol Microphone]);
+		case $item[Loathing Idol Microphone (25% charged)]:
+			return 0.25 * itemValue($item[Loathing Idol Microphone]);
+	}
+	
 	int specialValue ( item it ) {
 		switch (it) {
 			case $item[spooky putty monster]:
@@ -165,13 +177,6 @@ int itemValue ( item it ) {
                 return itemValue($item[one-day ticket to The Glaciest]) / 50;
 			case $item[fake hand]:
 				return 50000;
-			//loathing idol
-			case $item[Loathing Idol Microphone (75% charged)]:
-				return 0.75 * itemValue($item[Loathing Idol Microphone]);
-			case $item[Loathing Idol Microphone (50% charged)]:
-				return 0.5 * itemValue($item[Loathing Idol Microphone]);
-			case $item[Loathing Idol Microphone (25% charged)]:
-				return 0.25 * itemValue($item[Loathing Idol Microphone]);
 			
 			default:
 				if ( npc_price(it) > 0 )
