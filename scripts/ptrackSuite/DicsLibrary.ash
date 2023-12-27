@@ -63,7 +63,7 @@ void fullHeal() {
 
 static {
 	boolean [item] GardenList = $items[Peppermint Pip Packet, packet of dragon's teeth, packet of beer seeds, packet of winter seeds, packet of thanksgarden seeds, packet of tall grass seeds,packet of mushroom spores];
-	boolean [item] WorkshedList = $items[warbear jackhammer drill press, warbear auto-anvil, warbear induction oven, warbear chemistry lab, warbear high-efficiency still, warbear lp-rom burner, spinning wheel, snow machine, asdon martin keyfob, portable mayo clinic, little geneticist dna-splicing lab, diabolic pizza cube];
+	boolean [item] WorkshedList = $items[warbear jackhammer drill press, warbear auto-anvil, warbear induction oven, warbear chemistry lab, warbear high-efficiency still, warbear lp-rom burner, spinning wheel, snow machine, Asdon Martin keyfob (on ring), portable mayo clinic, little geneticist dna-splicing lab, diabolic pizza cube];
 }
 
 int total_amount( item it ) {
