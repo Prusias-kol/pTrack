@@ -216,7 +216,6 @@ void main(string option) {
                     print("Please provide one arg true/false", "red");
                 }
                 return;
-                return();
             case "help":
                 printHelp();
                 return;
