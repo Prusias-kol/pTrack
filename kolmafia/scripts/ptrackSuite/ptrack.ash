@@ -208,7 +208,7 @@ void main(string option) {
             case "recap":
                 printBreakpointListComparison();
                 return;
-            case "useKolItemPrice":
+            case "usekolitemprice":
                 if(i + 1 < commands.count())
                 {
                     useKolItemPriceSetting(commands[i+1].to_lower_case());
