@@ -79,7 +79,20 @@ int ProfitCompareItem( boolean silent, string date1, string event1, string date2
 	itemcount [int] diff;
 	int difference;
 	int profit;
+
+	boolean[item] blacklistedItems;
+	
+	foreach x, it in get_property("prusias_profitTracking_blackList").split_string('(?<!\\\\)(, |,)') {
+		it = replace_all(create_matcher(`\\\\`, it), "");
+		blacklistedItems[it.to_item()] = true;
+	}
+
 	foreach it in $items[] {
+
+		if(blacklistedItems contains it){
+			continue;
+		}
+
 		if ( itemList1[it] != itemList2[it] ) {
 			difference = itemList2[it]-itemList1[it];
 			diff[diff.count()] = new itemcount(it, difference);
