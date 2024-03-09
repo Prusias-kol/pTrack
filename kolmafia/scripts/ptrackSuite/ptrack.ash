@@ -14,11 +14,12 @@ void printBreakpointListComparison();
 void printHelp();
 void ptrackCheckUpdate();
 
-int version = 2;
+int version = 3;
 string[int] updates;
 updates[0] = "Update Log Added";
 updates[1] = "File compare added. Check your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and use them to compare across days!";
 updates[2] = "Ptrack will now handle duplicate breakpoint names by giving the repeat a number.";
+updates[3] = "Ptrack has an option to use Irrat's mall price data for more accurate item values. Thanks Jimmyking for PR";
 
 void printHelp() {
     print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
@@ -31,7 +32,8 @@ void printHelp() {
     print_html("<b>recap</b> - Recaps all breakpoints and their differences as well as your first and last breakpoints.");
     print_html("<b>coinvalue</b> - Examines all coinmaster currencies and attempts to value them.");
     print_html("<b>fileCompare (date1) (bp1) (date2) (bp2)</b> - Go into your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and find two breakpoints you would like to compare. File format is as follows: <font color=008080>date breakpoint.txt</font>. Do not include the .txt!");
-    
+    print_html("<b>useKolItemPrice (true/false)</b> - Use Irrat's KolItemPrice repo for more accurate mall prices. The only valid arguments are \"true\" or \"false\".");
+
     ptrackCheckUpdate();
 }
 
@@ -145,10 +147,20 @@ void compare_using_list_and_date(string date) {
 	}
 }
 
+void useKolItemPriceSetting(string option) {
+    if (option == "true") {
+        set_property("prusias_profitTracking_use_irrat_list", "true");
+    } else if (option == "false") {
+        set_property("prusias_profitTracking_use_irrat_list", "false");
+    } else {
+        print("true or false are the only valid options", "red");
+    }
+}
+
 
 
 void main(string option) {
-    string [int] commands = option.split_string("\\s+");
+    string [int] commands = option.to_lower_case().split_string("\\s+");
     for(int i = 0; i < commands.count(); ++i){
         switch(commands[i]){
             case "add":
@@ -171,7 +183,6 @@ void main(string option) {
                     print("Please provide two valid breakpoint names", "red");
                 }
                 return;
-            case "dCompare":
             case "dcompare":
                 if(i + 2 < commands.count())
                 {
@@ -181,7 +192,6 @@ void main(string option) {
                 }
                 return;
             case "filecompare":
-            case "fileCompare":
                 if(i + 4 < commands.count())
                 {
                     compare_both(commands[i+1], commands[i+2], commands[i+3], commands[i+4], false);
@@ -189,7 +199,6 @@ void main(string option) {
                     print("Please provide the following arguments: date1, breakpoint1, date2, breakpoint2", "red");
                 }
                 return;
-            case "coinValue":
             case "coinvalue":
                 cli_execute("coinvalue");
                 return;
@@ -199,6 +208,15 @@ void main(string option) {
             case "recap":
                 printBreakpointListComparison();
                 return;
+            case "useKolItemPrice":
+                if(i + 1 < commands.count())
+                {
+                    useKolItemPriceSetting(commands[i+1].to_lower_case());
+                } else {
+                    print("Please provide one arg true/false", "red");
+                }
+                return;
+                return();
             case "help":
                 printHelp();
                 return;
