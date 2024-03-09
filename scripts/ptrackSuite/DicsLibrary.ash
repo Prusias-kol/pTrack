@@ -106,8 +106,26 @@ int recent_price(item it) {
 
 int averageValue ( boolean [item] itemList );
 
+string[int] priceHash;
+
+if(get_property("prusias_profitTracking_use_irrat_list") != ""){
+	string[int, int, int] irrat_list;
+	file_to_map("irrats_item_prices.txt", irrat_list);
+
+	foreach id, soldLastWeek, price in irrat_list {
+		priceHash[id] = price;
+	}
+}
+
+
 int itemValue ( item it ) {
 	//absolute exceptions that should override mall price
+
+	if(get_property("prusias_profitTracking_use_irrat_list") != ""){
+		return priceHash[it.id].to_int();
+	}
+
+
 	switch (it) {
 		//mob penguin
 		case $item[Mob Penguin cellular phone]:
