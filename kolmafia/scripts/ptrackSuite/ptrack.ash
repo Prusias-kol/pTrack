@@ -23,6 +23,7 @@ updates[3] = "Ptrack has an option to use Irrat's mall price data for more accur
 
 void printHelp() {
     print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
+    print_html("<em>commands are not case sensitive</em>");
     print_html("<b>help</b> - Prints this help list.");
     print_html("<b>breakfast</b> - Sets a breakpoint named <b><font color=eda800>start</font></b> and then runs breakfast to track breakfast profits.");
     print_html("<b>add (bp name)</b> - Adds a breakpoint name. Names must be unique and contain no spaces.");
@@ -157,6 +158,24 @@ void useKolItemPriceSetting(string option) {
     }
 }
 
+void clearBlacklist() {
+    set_property("prusias_profitTracking_blacklist","");
+}
+
+void addBlacklistItem(string itemToAdd) {
+    item it = itemToAdd.to_item();
+    if (it == $item[none]) {
+        print("Not a valid item. Double check spelling", "red");
+    } else {
+        string itemName = it.to_string();
+        itemName = replace_all(create_matcher(",",itemName),"\\\\,");
+        if (get_property("prusias_profitTracking_blacklist") == "") {
+            set_property("prusias_profitTracking_blacklist", itemName);
+        } else {
+            set_property("prusias_profitTracking_blacklist", get_property("prusias_profitTracking_blacklist") + ", " + itemName);
+        }
+    }
+}
 
 
 void main(string option) {
@@ -214,6 +233,23 @@ void main(string option) {
                     useKolItemPriceSetting(commands[i+1].to_lower_case());
                 } else {
                     print("Please provide one arg true/false", "red");
+                }
+                return;
+            case "clearblacklist":
+                clearBlacklist();
+                return;
+            case "addblacklist":
+                if(i + 1 < commands.count())
+                {
+                    i = i+1;
+                    string blacklistInput = "";
+                    while (i < commands.count()) {
+                        blacklistInput += commands[i];
+                        i++;
+                    }
+                    addBlacklistItem(blacklistInput);
+                } else {
+                    print("Please provide an item name as an argument.", "red");
                 }
                 return;
             case "help":
