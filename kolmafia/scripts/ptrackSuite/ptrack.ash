@@ -163,6 +163,7 @@ void useKolItemPriceSetting(string option) {
 
 void clearBlacklist() {
     set_property("prusias_profitTracking_blacklist","");
+    print("Blacklist emptied. All items will be considered when comparing breakpoints.");
 }
 
 void addBlacklistItem(string itemToAdd) {
