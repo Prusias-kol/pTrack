@@ -106,8 +106,22 @@ int recent_price(item it) {
 
 int averageValue ( boolean [item] itemList );
 
+string[int] priceHash;
+
+if(get_property("prusias_profitTracking_use_irrat_list").to_boolean() == true){
+	string[int, int, int] irrat_list;
+	file_to_map("irrats_item_prices.txt", irrat_list);
+
+	foreach id, soldLastWeek, price in irrat_list {
+		priceHash[id] = price;
+	}
+}
+
+
 int itemValue ( item it ) {
 	//absolute exceptions that should override mall price
+
+
 	switch (it) {
 		//mob penguin
 		case $item[Mob Penguin cellular phone]:
@@ -187,6 +201,9 @@ int itemValue ( item it ) {
 
 	int singularValue( item it ) {
 		int minValue = specialValue(it);
+		if(get_property("prusias_profitTracking_use_irrat_list").to_boolean() == true && minValue == 0){
+			return priceHash[it.id].to_int();
+		}
 
 		if ( recent_price(it) <= max(100,2* autosell_price(it)) )
 			return max( minValue , autosell_price(it) );
