@@ -121,10 +121,6 @@ if(get_property("prusias_profitTracking_use_irrat_list") != ""){
 int itemValue ( item it ) {
 	//absolute exceptions that should override mall price
 
-	if(get_property("prusias_profitTracking_use_irrat_list") != ""){
-		return priceHash[it.id].to_int();
-	}
-
 
 	switch (it) {
 		//mob penguin
@@ -201,6 +197,10 @@ int itemValue ( item it ) {
 					return npc_price(it);
 				return 0;
 		}
+	}
+
+	if(get_property("prusias_profitTracking_use_irrat_list") != ""){
+		return priceHash[it.id].to_int();
 	}
 
 	int singularValue( item it ) {
