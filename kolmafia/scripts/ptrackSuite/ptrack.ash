@@ -14,12 +14,13 @@ void printBreakpointListComparison();
 void printHelp();
 void ptrackCheckUpdate();
 
-int version = 3;
+int version = 4;
 string[int] updates;
 updates[0] = "Update Log Added";
 updates[1] = "File compare added. Check your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and use them to compare across days!";
 updates[2] = "Ptrack will now handle duplicate breakpoint names by giving the repeat a number.";
 updates[3] = "Ptrack has an option to use Irrat's mall price data for more accurate item values. Thanks Jimmyking for PR";
+updates[4] = "Ptrack supports blacklisted items in case you want to not consider any items. Will not affect any saved data as this is only considered when comparing two breakpoints. Thanks Jimmyking for the slick regex";
 
 void printHelp() {
     print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
@@ -34,6 +35,8 @@ void printHelp() {
     print_html("<b>coinvalue</b> - Examines all coinmaster currencies and attempts to value them.");
     print_html("<b>fileCompare (date1) (bp1) (date2) (bp2)</b> - Go into your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and find two breakpoints you would like to compare. File format is as follows: <font color=008080>date breakpoint.txt</font>. Do not include the .txt!");
     print_html("<b>useKolItemPrice (true/false)</b> - Use Irrat's KolItemPrice repo for more accurate mall prices. The only valid arguments are \"true\" or \"false\".");
+    print_html("<b>clearBlacklist</b> - Empties blacklist so all items are considered for profit tracking.");
+    print_html("<b>addBlacklist (item name)</b> - Adds an item to the blacklist. Give the item name. Can partially complete spelling if there's no ambiguity.");
 
     ptrackCheckUpdate();
 }
