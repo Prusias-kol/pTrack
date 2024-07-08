@@ -191,7 +191,8 @@ int itemValue ( item it ) {
                 return itemValue($item[one-day ticket to The Glaciest]) / 50;
 			case $item[fake hand]:
 				return 50000;
-			
+			case $item[Source Essence]:
+				return 10;
 			default:
 				if ( npc_price(it) > 0 )
 					return npc_price(it);
