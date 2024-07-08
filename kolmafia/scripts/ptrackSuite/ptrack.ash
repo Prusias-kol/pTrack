@@ -183,9 +183,9 @@ void addBlacklistItem(string itemToAdd) {
 
 
 void main(string option) {
-    string [int] commands = option.to_lower_case().split_string("\\s+");
+    string [int] commands = option.split_string("\\s+");
     for(int i = 0; i < commands.count(); ++i){
-        switch(commands[i]){
+        switch(commands[i].to_lower_case()){
             case "add":
                 if(i + 1 < commands.count())
                 {
