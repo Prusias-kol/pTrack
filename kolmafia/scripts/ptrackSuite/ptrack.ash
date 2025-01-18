@@ -37,6 +37,8 @@ void printHelp() {
     print_html("<b>useKolItemPrice (true/false)</b> - Use Irrat's KolItemPrice repo for more accurate mall prices. The only valid arguments are \"true\" or \"false\".");
     print_html("<b>clearBlacklist</b> - Empties blacklist so all items are considered for profit tracking.");
     print_html("<b>addBlacklist (item name)</b> - Adds an item to the blacklist. Give the item name as parameter. Will not affect data stored, only used when comparing breakpoints.");
+    print_html("<b>addPriceOverride (item id) (price)</b> - Adds an item to the price override list. Give the item id and price as parameters. This will override the price of the item when comparing breakpoints.");
+    print_html("<b>clearPriceOverrides</b> - Empties the price override list.");
 
     ptrackCheckUpdate();
 }
@@ -181,6 +183,20 @@ void addBlacklistItem(string itemToAdd) {
     }
 }
 
+void addPriceOverrideItem(string itemToAdd, int price) {
+    item it = itemToAdd.to_item();
+    if (it == $item[none]) {
+        print("Not a valid item. Double check spelling", "red");
+    } else {
+        string itemName = it.to_int() + ":" + price;
+        if (get_property("prusias_ptrack_priceOverrides") == "") {
+            set_property("prusias_ptrack_priceOverrides", itemName);
+        } else {
+            set_property("prusias_ptrack_priceOverrides", get_property("prusias_ptrack_priceOverrides") + ", " + itemName);
+        }
+    }
+}
+
 
 void main(string option) {
     string [int] commands = option.split_string("\\s+");
@@ -255,6 +271,21 @@ void main(string option) {
                 } else {
                     print("Please provide an item name as an argument.", "red");
                 }
+                return;
+            case "addpriceoverride":
+                if (i + 2 < commands.count()) {
+                    string itemArg = commands[i+1];
+                    string priceArg = commands[i+2];
+                    int itemArgAsInt = itemArg.to_int();
+                    addPriceOverrideItem(itemArgAsInt.to_item(), priceArg.to_int());
+                } else {
+                    print("Please provide an item id and price as arguments.", "red");
+                }
+                return;
+            case "clearpriceoverrides":
+                print("Original prusias_ptrack_priceOverrides pref:", "teal");
+                print(get_property("prusias_ptrack_priceOverrides"));
+                set_property("prusias_ptrack_priceOverrides", "");
                 return;
             case "help":
                 printHelp();
