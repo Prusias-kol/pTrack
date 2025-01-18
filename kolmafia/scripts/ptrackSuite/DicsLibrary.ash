@@ -8,6 +8,18 @@ int minMP = max(0,my_maxmp()*to_float(get_property("mpAutoRecoveryTarget"))) + t
 
 float ITEM_PRICE_MULTIPLIER = 0.9;
 
+int[item] userPriceOverrides;
+boolean checkUserPriceOverrides = false;
+if (get_property("prusias_ptrack_priceOverrides") != "") {
+	checkUserPriceOverrides = true;
+	foreach x, it in get_property("prusias_ptrack_priceOverrides").split_string('(?<!\\\\)(, |,)') {
+		string[int] split_map = split_string(it, ":");
+		item overrideItem = to_item(split_map[0].to_int());
+		int overridePrice = split_map[1].to_int();
+		userPriceOverrides[overrideItem] = overridePrice;
+	}
+}
+
 boolean has_effect( effect ef ) {
 	return (have_effect(ef) > 0);
 }
@@ -119,9 +131,14 @@ if(get_property("prusias_profitTracking_use_irrat_list").to_boolean() == true){
 
 
 int itemValue ( item it ) {
+	//User overrides
+	if (checkUserPriceOverrides) {
+		if (userPriceOverrides contains it) {
+			return userPriceOverrides[it];
+		}
+	}
+
 	//absolute exceptions that should override mall price
-
-
 	switch (it) {
 		//mob penguin
 		case $item[Mob Penguin cellular phone]:
