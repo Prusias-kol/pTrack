@@ -39,6 +39,7 @@ void printHelp() {
     print_html("<b>addBlacklist (item name)</b> - Adds an item to the blacklist. Give the item name as parameter. Will not affect data stored, only used when comparing breakpoints.");
     print_html("<b>addPriceOverride (item id) (price)</b> - Adds an item to the price override list. Give the item id and price as parameters. This will override the price of the item when comparing breakpoints.");
     print_html("<b>clearPriceOverrides</b> - Empties the price override list.");
+    print_html("<b>graph</b> - Generates a net worth tracking graph from your historical ptrack data. Outputs an HTML file you can open in your browser.");
 
     ptrackCheckUpdate();
 }
@@ -286,6 +287,9 @@ void main(string option) {
                 print("Original prusias_ptrack_priceOverrides pref:", "teal");
                 print(get_property("prusias_ptrack_priceOverrides"));
                 set_property("prusias_ptrack_priceOverrides", "");
+                return;
+            case "graph":
+                cli_execute("ptrackSuite/networth_graph.js");
                 return;
             case "help":
                 printHelp();
