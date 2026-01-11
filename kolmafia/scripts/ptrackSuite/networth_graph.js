@@ -13,7 +13,10 @@ var toItem = kolmafia.toItem;
 
 // Configuration
 var ITEM_PRICE_MULTIPLIER = 0.9;
-var DATA_PATH = "Profit Tracking/" + myName();
+
+function getDataPath() {
+    return "Profit Tracking/" + myName();
+}
 
 /**
  * Get item value similar to DicsLibrary.ash itemValue function
@@ -46,7 +49,7 @@ function readMeatData() {
     var entries = [];
     
     try {
-        var content = fileToBuffer(DATA_PATH + "/meat.txt");
+        var content = fileToBuffer(getDataPath() + "/meat.txt");
         if (!content || content.length === 0) {
             print("meat.txt is empty or not found", "orange");
             return entries;
@@ -105,13 +108,32 @@ function readMeatData() {
 
 /**
  * Read inventory file for a specific date and event
+ * Format: itemId\tcount (one per line)
  */
 function readInventoryFile(date, event) {
     var inventoryData = {};
     try {
-        fileToMap(DATA_PATH + "/inventory/" + date + " " + event + ".txt", inventoryData);
+        var filePath = getDataPath() + "/inventory/" + date + " " + event + ".txt";
+        var content = fileToBuffer(filePath);
+        if (content && content.length > 0) {
+            var lines = content.split('\n');
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line) continue;
+                
+                // Format: itemId\tcount
+                var parts = line.split('\t');
+                if (parts.length >= 2) {
+                    var itemId = parts[0].trim();
+                    var count = parseInt(parts[1].trim(), 10) || 0;
+                    if (itemId && count !== 0) {
+                        inventoryData[itemId] = count;
+                    }
+                }
+            }
+        }
     } catch (e) {
-        // File doesn't exist
+        // File doesn't exist or can't be read
     }
     return inventoryData;
 }
@@ -171,13 +193,17 @@ function formatValue(value) {
 
 /**
  * Build data points for the graph
+ * @param {boolean} includeItems - Whether to calculate item/asset values (slower)
  */
-function buildGraphData() {
-    print("Reading profit tracking data...", "blue");
+function buildGraphData(includeItems) {
+    print("Reading profit tracking data...", "teal");
+    if (includeItems) {
+        print("Including item values (this may take a while)...", "teal");
+    }
     
     var entries = readMeatData();
     
-    print("Found " + entries.length + " entries in meat.txt", "blue");
+    print("Found " + entries.length + " entries in meat.txt", "teal");
     
     if (entries.length === 0) {
         print("meat.txt appears to be empty or not found", "red");
@@ -186,7 +212,7 @@ function buildGraphData() {
     }
     
     var dates = getUniqueDates(entries);
-    print("Found " + dates.length + " unique days of data", "blue");
+    print("Found " + dates.length + " unique days of data", "teal");
     
     // No baseline needed - we show absolute values now
     
@@ -229,15 +255,18 @@ function buildGraphData() {
             continue;
         }
         
-        // Calculate asset value
-        var inventory = readInventoryFile(date, endEntry.event);
-        var inventoryCount = Object.keys(inventory).length;
-        
-        if (inventoryCount === 0) {
-            inventoryMissing++;
+        // Calculate asset value only if includeItems is true
+        var assetValue = 0;
+        if (includeItems) {
+            var inventory = readInventoryFile(date, endEntry.event);
+            var inventoryCount = Object.keys(inventory).length;
+            
+            if (inventoryCount === 0) {
+                inventoryMissing++;
+            }
+            
+            assetValue = calculateAssetValue(inventory);
         }
-        
-        var assetValue = calculateAssetValue(inventory);
         
         dataPoints.push({
             date: date,
@@ -251,18 +280,20 @@ function buildGraphData() {
     if (skippedDays > 0) {
         print("Skipped " + skippedDays + " days with no usable data", "orange");
     }
-    if (inventoryMissing > 0) {
+    if (includeItems && inventoryMissing > 0) {
         print("Note: " + inventoryMissing + " days had no inventory file (asset value = 0)", "orange");
     }
     
-    print("Processed " + dataPoints.length + " data points", "blue");
+    print("Processed " + dataPoints.length + " data points", "teal");
     return dataPoints;
 }
 
 /**
  * Generate SVG graph
+ * @param {Array} dataPoints - Array of data points
+ * @param {boolean} includeItems - Whether item values were included
  */
-function generateSVG(dataPoints) {
+function generateSVG(dataPoints, includeItems) {
     if (!dataPoints || dataPoints.length === 0) {
         return "<p>No data to display</p>";
     }
@@ -279,11 +310,17 @@ function generateSVG(dataPoints) {
     var maxValue = 0;
     for (var i = 0; i < dataPoints.length; i++) {
         var lm = dataPoints[i].liquidMeat;
-        var av = dataPoints[i].assetValue;
         if (lm < minValue) minValue = lm;
-        if (av < minValue) minValue = av;
         if (lm > maxValue) maxValue = lm;
-        if (av > maxValue) maxValue = av;
+        
+        if (includeItems) {
+            var av = dataPoints[i].assetValue;
+            var total = dataPoints[i].totalNetWorth;
+            if (av < minValue) minValue = av;
+            if (total < minValue) minValue = total;
+            if (av > maxValue) maxValue = av;
+            if (total > maxValue) maxValue = total;
+        }
     }
     var valueRange = maxValue - minValue || 1;
     
@@ -298,22 +335,32 @@ function generateSVG(dataPoints) {
     // Build paths
     var meatPath = "M";
     var assetPath = "M";
+    var totalPath = "M";
     var meatArea = "M" + xScale(0) + "," + yScale(minValue);
     
     for (var i = 0; i < dataPoints.length; i++) {
         var point = dataPoints[i];
         var x = xScale(i);
         var yMeat = yScale(point.liquidMeat);
-        var yAsset = yScale(point.assetValue);
         
         if (i === 0) {
             meatPath += x + "," + yMeat;
-            assetPath += x + "," + yAsset;
             meatArea += " L" + x + "," + yMeat;
+            if (includeItems) {
+                var yAsset = yScale(point.assetValue);
+                var yTotal = yScale(point.totalNetWorth);
+                assetPath += x + "," + yAsset;
+                totalPath += x + "," + yTotal;
+            }
         } else {
             meatPath += " L" + x + "," + yMeat;
-            assetPath += " L" + x + "," + yAsset;
             meatArea += " L" + x + "," + yMeat;
+            if (includeItems) {
+                var yAsset = yScale(point.assetValue);
+                var yTotal = yScale(point.totalNetWorth);
+                assetPath += " L" + x + "," + yAsset;
+                totalPath += " L" + x + "," + yTotal;
+            }
         }
     }
     
@@ -396,16 +443,30 @@ function generateSVG(dataPoints) {
     svg += '    <!-- Liquid Meat line -->\n';
     svg += '    <path d="' + meatPath + '" fill="none" stroke="#4CAF50" stroke-width="2.5"/>\n';
     svg += '    \n';
-    svg += '    <!-- Asset Value line (dashed) -->\n';
-    svg += '    <path d="' + assetPath + '" fill="none" stroke="#FF9800" stroke-width="2" stroke-dasharray="8,4"/>\n';
-    svg += '    \n';
+    
+    if (includeItems) {
+        svg += '    <!-- Asset Value line (dashed) -->\n';
+        svg += '    <path d="' + assetPath + '" fill="none" stroke="#FF9800" stroke-width="2" stroke-dasharray="8,4"/>\n';
+        svg += '    \n';
+        svg += '    <!-- Account Value line (dotted) -->\n';
+        svg += '    <path d="' + totalPath + '" fill="none" stroke="#2196F3" stroke-width="2" stroke-dasharray="2,2"/>\n';
+        svg += '    \n';
+    }
+    
     svg += '    <!-- Legend -->\n';
     svg += '    <g transform="translate(' + (margin.left + 20) + ', ' + (margin.top + 10) + ')">\n';
     svg += '        <line x1="0" y1="0" x2="30" y2="0" stroke="#4CAF50" stroke-width="2.5"/>\n';
     svg += '        <text x="40" y="4" font-size="12" fill="#333">Liquid Meat Balance</text>\n';
-    svg += '        \n';
-    svg += '        <line x1="0" y1="20" x2="30" y2="20" stroke="#FF9800" stroke-width="2" stroke-dasharray="8,4"/>\n';
-    svg += '        <text x="40" y="24" font-size="12" fill="#333">Asset Value (Estimated)</text>\n';
+    
+    if (includeItems) {
+        svg += '        \n';
+        svg += '        <line x1="0" y1="20" x2="30" y2="20" stroke="#FF9800" stroke-width="2" stroke-dasharray="8,4"/>\n';
+        svg += '        <text x="40" y="24" font-size="12" fill="#333">Asset Value (Items Only)</text>\n';
+        svg += '        \n';
+        svg += '        <line x1="0" y1="40" x2="30" y2="40" stroke="#2196F3" stroke-width="2" stroke-dasharray="2,2"/>\n';
+        svg += '        <text x="40" y="44" font-size="12" fill="#333">Account Value (Meat + Items)</text>\n';
+    }
+    
     svg += '    </g>\n';
     svg += '</svg>';
     
@@ -414,9 +475,11 @@ function generateSVG(dataPoints) {
 
 /**
  * Generate full HTML page
+ * @param {Array} dataPoints - Array of data points
+ * @param {boolean} includeItems - Whether item values were included
  */
-function generateHTML(dataPoints) {
-    var svg = generateSVG(dataPoints);
+function generateHTML(dataPoints, includeItems) {
+    var svg = generateSVG(dataPoints, includeItems);
     
     // Calculate summary stats
     var summaryHtml = "";
@@ -450,14 +513,16 @@ function generateHTML(dataPoints) {
         summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Current Liquid Meat</strong></td>\n';
         summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;">' + formatValue(latest.liquidMeat) + '</td>\n';
         summaryHtml += '            </tr>\n';
-        summaryHtml += '            <tr style="background: #f5f5f5;">\n';
-        summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Current Asset Value</strong></td>\n';
-        summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;">' + formatValue(latest.assetValue) + '</td>\n';
-        summaryHtml += '            </tr>\n';
-        summaryHtml += '            <tr>\n';
-        summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Total Net Worth</strong></td>\n';
-        summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>' + formatValue(latest.totalNetWorth) + '</strong></td>\n';
-        summaryHtml += '            </tr>\n';
+        if (includeItems) {
+            summaryHtml += '            <tr style="background: #f5f5f5;">\n';
+            summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Current Asset Value</strong></td>\n';
+            summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;">' + formatValue(latest.assetValue) + '</td>\n';
+            summaryHtml += '            </tr>\n';
+            summaryHtml += '            <tr>\n';
+            summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Account Value (Meat + Items)</strong></td>\n';
+            summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd; color: #2196F3;"><strong>' + formatValue(latest.totalNetWorth) + '</strong></td>\n';
+            summaryHtml += '            </tr>\n';
+        }
         summaryHtml += '            <tr style="background: #f5f5f5;">\n';
         summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Liquid Meat Earn/Loss</strong></td>\n';
         summaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd; color: ' + changeColor + ';">' + (meatChange >= 0 ? '+' : '') + formatValue(meatChange) + '</td>\n';
@@ -531,12 +596,20 @@ function generateHTML(dataPoints) {
 
 /**
  * Main function
+ * @param {string} args - "items" to include item values, empty for meat-only (faster)
  */
 function main(args) {
-    print("=== Net Worth Graph Generator ===", "blue");
-    print("Building graph data from profit tracking files...", "blue");
+    var includeItems = (args && args.toLowerCase() === "items");
     
-    var dataPoints = buildGraphData();
+    print("=== Net Worth Graph Generator ===", "teal");
+    if (includeItems) {
+        print("Mode: Full (including item values - slower)", "teal");
+    } else {
+        print("Mode: Meat only (fast). Use 'ptrack graphWithItems' to include item values.", "gray");
+    }
+    print("Building graph data from profit tracking files...", "teal");
+    
+    var dataPoints = buildGraphData(includeItems);
     
     if (!dataPoints || dataPoints.length === 0) {
         print("No data found to generate graph.", "red");
@@ -544,11 +617,11 @@ function main(args) {
         return;
     }
     
-    var html = generateHTML(dataPoints);
+    var html = generateHTML(dataPoints, includeItems);
     
     // Print summary
     print("Graph data processed successfully!", "green");
-    print("Data points: " + dataPoints.length, "blue");
+    print("Data points: " + dataPoints.length, "teal");
     
     if (dataPoints.length > 0) {
         var latest = dataPoints[dataPoints.length - 1];
@@ -567,10 +640,12 @@ function main(args) {
             }
         }
         
-        print("Latest data: " + latest.date, "blue");
+        print("Latest data: " + latest.date, "teal");
         print("  Liquid Meat: " + formatValue(latest.liquidMeat), "teal");
-        print("  Asset Value: " + formatValue(latest.assetValue), "teal");
-        print("  Total Net Worth: " + formatValue(latest.totalNetWorth), "teal");
+        if (includeItems) {
+            print("  Asset Value (Items): " + formatValue(latest.assetValue), "teal");
+            print("  Account Value (Total): " + formatValue(latest.totalNetWorth), "teal");
+        }
         print("  Liquid Meat Earn/Loss: " + (meatChange >= 0 ? "+" : "") + formatValue(meatChange), "teal");
         print("  Total Meat Earned: +" + formatValue(totalGains), "green");
         print("  Total Meat Spent: -" + formatValue(totalLosses), "red");
@@ -581,16 +656,16 @@ function main(args) {
     try {
         var success = bufferToFile(html, outputPath);
         if (success) {
-            print("", "blue");
+            print("", "teal");
             print("Graph saved to: data/" + outputPath, "green");
-            print("Open this file in your browser to view the graph!", "blue");
+            print("Open this file in your browser to view the graph!", "teal");
         } else {
             print("Could not save file, displaying in relay browser instead.", "orange");
             printHtml(html);
         }
     } catch (e) {
         print("Error saving file: " + e, "orange");
-        print("Displaying in relay browser instead.", "blue");
+        print("Displaying in relay browser instead.", "teal");
         printHtml(html);
     }
 }
