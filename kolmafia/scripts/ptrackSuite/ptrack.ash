@@ -14,13 +14,14 @@ void printBreakpointListComparison();
 void printHelp();
 void ptrackCheckUpdate();
 
-int version = 4;
+int version = 5;
 string[int] updates;
 updates[0] = "Update Log Added";
 updates[1] = "File compare added. Check your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and use them to compare across days!";
 updates[2] = "Ptrack will now handle duplicate breakpoint names by giving the repeat a number.";
 updates[3] = "Ptrack has an option to use Irrat's mall price data for more accurate item values. Thanks Jimmyking for PR";
 updates[4] = "Ptrack supports blacklisted items in case you want to not consider any items. Will not affect any saved data as this is only considered when comparing two breakpoints. Thanks Jimmyking for the slick regex";
+updates[5] = "Ptrack now has a sweet graphing generator. This graphs your liquid meat over time!";
 
 void printHelp() {
     print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
@@ -203,6 +204,11 @@ void addPriceOverrideItem(string itemToAdd, int price) {
 
 
 void main(string option) {
+    if (get_property("prusias_profitTracking_use_irrat_list") == "") {
+        set_property("prusias_profitTracking_use_irrat_list", "true");
+    }
+
+    
     string [int] commands = option.split_string("\\s+");
     for(int i = 0; i < commands.count(); ++i){
         switch(commands[i].to_lower_case()){

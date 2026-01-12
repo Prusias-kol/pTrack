@@ -154,6 +154,293 @@ function calculateAssetValue(inventoryData) {
 }
 
 /**
+ * Read networth_checkpoints.txt file
+ * Format: date\tevent\tmeat\tcalculateditemvalue
+ * Keys are [date, event] similar to meat.txt
+ */
+function readNetworthCheckpoints() {
+    var entries = [];
+    
+    try {
+        var content = fileToBuffer(getDataPath() + "/networth_checkpoints.txt");
+        if (!content || content.length === 0) {
+            return entries;
+        }
+        
+        var lines = content.split('\n');
+        var skippedLines = 0;
+        
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line) continue;
+            
+            // Tab-separated: date, event, meat, calculateditemvalue
+            var parts = line.split('\t');
+            
+            if (parts.length >= 4) {
+                var date = parts[0];
+                var event = parts[1];
+                var meat = parseInt(parts[2], 10) || 0;
+                var calculateditemvalue = parseInt(parts[3], 10) || 0;
+                
+                // Validate date format (should be 8 digits like 20230117)
+                if (/^\d{8}$/.test(date)) {
+                    entries.push({
+                        date: date,
+                        event: event,
+                        meat: meat,
+                        calculateditemvalue: calculateditemvalue,
+                        accountValue: meat + calculateditemvalue
+                    });
+                } else {
+                    skippedLines++;
+                }
+            } else {
+                skippedLines++;
+            }
+        }
+        
+        if (skippedLines > 0) {
+            print("Skipped " + skippedLines + " unparseable lines in networth_checkpoints.txt", "gray");
+        }
+        
+    } catch (e) {
+        print("Error reading networth_checkpoints.txt: " + e, "orange");
+    }
+    
+    return entries;
+}
+
+/**
+ * Build data points from networth checkpoint data
+ * Uses pre-calculated item values stored at checkpoint time
+ */
+function buildCheckpointGraphData() {
+    print("Reading networth checkpoint data...", "teal");
+    
+    var entries = readNetworthCheckpoints();
+    
+    if (entries.length === 0) {
+        print("No checkpoint data found in networth_checkpoints.txt", "gray");
+        return null;
+    }
+    
+    print("Found " + entries.length + " checkpoint entries", "teal");
+    
+    // Get unique dates and pick one entry per date (prefer "start", then first available)
+    var dateMap = {};
+    for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i];
+        if (!dateMap[entry.date]) {
+            dateMap[entry.date] = [];
+        }
+        dateMap[entry.date].push(entry);
+    }
+    
+    var dates = Object.keys(dateMap);
+    dates.sort();
+    
+    var dataPoints = [];
+    
+    for (var d = 0; d < dates.length; d++) {
+        var date = dates[d];
+        var dayEntries = dateMap[date];
+        
+        // Prefer "start" event, otherwise use first entry
+        var selectedEntry = null;
+        for (var j = 0; j < dayEntries.length; j++) {
+            if (dayEntries[j].event.toLowerCase() === "start") {
+                selectedEntry = dayEntries[j];
+                break;
+            }
+        }
+        if (!selectedEntry) {
+            selectedEntry = dayEntries[0];
+        }
+        
+        dataPoints.push({
+            date: selectedEntry.date,
+            displayDate: formatDate(selectedEntry.date),
+            liquidMeat: selectedEntry.meat,
+            assetValue: selectedEntry.calculateditemvalue,
+            totalNetWorth: selectedEntry.accountValue
+        });
+    }
+    
+    print("Processed " + dataPoints.length + " checkpoint data points", "teal");
+    return dataPoints;
+}
+
+/**
+ * Generate SVG graph for checkpoint data (historical item values)
+ * @param {Array} dataPoints - Array of checkpoint data points
+ */
+function generateCheckpointSVG(dataPoints) {
+    if (!dataPoints || dataPoints.length === 0) {
+        return "<p>No checkpoint data to display</p>";
+    }
+    
+    // Graph dimensions
+    var width = 1200;
+    var height = 500;
+    var margin = { top: 60, right: 30, bottom: 60, left: 80 };
+    var graphWidth = width - margin.left - margin.right;
+    var graphHeight = height - margin.top - margin.bottom;
+    
+    // Calculate min/max values across all three metrics
+    var minValue = 0;
+    var maxValue = 0;
+    for (var i = 0; i < dataPoints.length; i++) {
+        var lm = dataPoints[i].liquidMeat;
+        var av = dataPoints[i].assetValue;
+        var total = dataPoints[i].totalNetWorth;
+        
+        if (lm < minValue) minValue = lm;
+        if (av < minValue) minValue = av;
+        if (total < minValue) minValue = total;
+        
+        if (lm > maxValue) maxValue = lm;
+        if (av > maxValue) maxValue = av;
+        if (total > maxValue) maxValue = total;
+    }
+    var valueRange = maxValue - minValue || 1;
+    
+    // Scale functions
+    function xScale(index) {
+        return margin.left + (index / (dataPoints.length - 1 || 1)) * graphWidth;
+    }
+    function yScale(value) {
+        return margin.top + graphHeight - ((value - minValue) / valueRange) * graphHeight;
+    }
+    
+    // Build paths for all three lines
+    var meatPath = "M";
+    var assetPath = "M";
+    var totalPath = "M";
+    var totalArea = "M" + xScale(0) + "," + yScale(minValue);
+    
+    for (var i = 0; i < dataPoints.length; i++) {
+        var point = dataPoints[i];
+        var x = xScale(i);
+        var yMeat = yScale(point.liquidMeat);
+        var yAsset = yScale(point.assetValue);
+        var yTotal = yScale(point.totalNetWorth);
+        
+        if (i === 0) {
+            meatPath += x + "," + yMeat;
+            assetPath += x + "," + yAsset;
+            totalPath += x + "," + yTotal;
+            totalArea += " L" + x + "," + yTotal;
+        } else {
+            meatPath += " L" + x + "," + yMeat;
+            assetPath += " L" + x + "," + yAsset;
+            totalPath += " L" + x + "," + yTotal;
+            totalArea += " L" + x + "," + yTotal;
+        }
+    }
+    
+    // Close the area path
+    totalArea += " L" + xScale(dataPoints.length - 1) + "," + yScale(minValue);
+    totalArea += " L" + xScale(0) + "," + yScale(minValue) + " Z";
+    
+    // Generate Y-axis labels
+    var yLabels = [];
+    var numYLabels = 6;
+    for (var i = 0; i <= numYLabels; i++) {
+        var value = minValue + (valueRange * i / numYLabels);
+        yLabels.push({
+            value: value,
+            y: yScale(value),
+            label: formatValue(Math.round(value))
+        });
+    }
+    
+    // Generate X-axis labels
+    var xLabels = [];
+    var labelInterval = Math.max(1, Math.floor(dataPoints.length / 12));
+    for (var i = 0; i < dataPoints.length; i++) {
+        if (i % labelInterval === 0 || i === dataPoints.length - 1) {
+            xLabels.push({
+                x: xScale(i),
+                label: dataPoints[i].displayDate
+            });
+        }
+    }
+    
+    // Build SVG with purple/violet theme to differentiate from the original graph
+    var svg = '<svg width="' + width + '" height="' + height + '" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; background: #fafafa;">\n';
+    svg += '    <defs>\n';
+    svg += '        <linearGradient id="checkpointGradient" x1="0%" y1="0%" x2="0%" y2="100%">\n';
+    svg += '            <stop offset="0%" style="stop-color:#9C27B0;stop-opacity:0.3"/>\n';
+    svg += '            <stop offset="100%" style="stop-color:#9C27B0;stop-opacity:0.05"/>\n';
+    svg += '        </linearGradient>\n';
+    svg += '    </defs>\n';
+    svg += '    \n';
+    svg += '    <!-- Title -->\n';
+    svg += '    <text x="' + (width/2) + '" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#333">Net Worth at Checkpoint Time (Historical Item Values)</text>\n';
+    svg += '    \n';
+    svg += '    <!-- Grid lines -->\n';
+    svg += '    <g stroke="#e0e0e0" stroke-width="1">\n';
+    
+    for (var i = 0; i < yLabels.length; i++) {
+        svg += '        <line x1="' + margin.left + '" y1="' + yLabels[i].y + '" x2="' + (width - margin.right) + '" y2="' + yLabels[i].y + '"/>\n';
+    }
+    
+    svg += '    </g>\n';
+    svg += '    \n';
+    svg += '    <!-- Axes -->\n';
+    svg += '    <line x1="' + margin.left + '" y1="' + margin.top + '" x2="' + margin.left + '" y2="' + (height - margin.bottom) + '" stroke="#333" stroke-width="2"/>\n';
+    svg += '    <line x1="' + margin.left + '" y1="' + (height - margin.bottom) + '" x2="' + (width - margin.right) + '" y2="' + (height - margin.bottom) + '" stroke="#333" stroke-width="2"/>\n';
+    svg += '    \n';
+    svg += '    <!-- Y-axis labels -->\n';
+    svg += '    <g font-size="12" fill="#666">\n';
+    
+    for (var i = 0; i < yLabels.length; i++) {
+        svg += '        <text x="' + (margin.left - 10) + '" y="' + (yLabels[i].y + 4) + '" text-anchor="end">' + yLabels[i].label + '</text>\n';
+    }
+    
+    svg += '    </g>\n';
+    svg += '    \n';
+    svg += '    <!-- X-axis labels -->\n';
+    svg += '    <g font-size="11" fill="#666">\n';
+    
+    for (var i = 0; i < xLabels.length; i++) {
+        var xPos = xLabels[i].x;
+        var yPos = height - margin.bottom + 20;
+        svg += '        <text x="' + xPos + '" y="' + yPos + '" text-anchor="middle" transform="rotate(-45, ' + xPos + ', ' + yPos + ')">' + xLabels[i].label + '</text>\n';
+    }
+    
+    svg += '    </g>\n';
+    svg += '    \n';
+    svg += '    <!-- Account Value area fill -->\n';
+    svg += '    <path d="' + totalArea + '" fill="url(#checkpointGradient)"/>\n';
+    svg += '    \n';
+    svg += '    <!-- Liquid Meat line -->\n';
+    svg += '    <path d="' + meatPath + '" fill="none" stroke="#4CAF50" stroke-width="2.5"/>\n';
+    svg += '    \n';
+    svg += '    <!-- Calculated Item Value line (dashed) -->\n';
+    svg += '    <path d="' + assetPath + '" fill="none" stroke="#FF9800" stroke-width="2" stroke-dasharray="8,4"/>\n';
+    svg += '    \n';
+    svg += '    <!-- Account Value line -->\n';
+    svg += '    <path d="' + totalPath + '" fill="none" stroke="#9C27B0" stroke-width="2.5"/>\n';
+    svg += '    \n';
+    svg += '    <!-- Legend -->\n';
+    svg += '    <g transform="translate(' + (margin.left + 20) + ', ' + (margin.top + 10) + ')">\n';
+    svg += '        <line x1="0" y1="0" x2="30" y2="0" stroke="#4CAF50" stroke-width="2.5"/>\n';
+    svg += '        <text x="40" y="4" font-size="12" fill="#333">Liquid Meat</text>\n';
+    svg += '        \n';
+    svg += '        <line x1="0" y1="20" x2="30" y2="20" stroke="#FF9800" stroke-width="2" stroke-dasharray="8,4"/>\n';
+    svg += '        <text x="40" y="24" font-size="12" fill="#333">Calculated Item Value (at checkpoint time)</text>\n';
+    svg += '        \n';
+    svg += '        <line x1="0" y1="40" x2="30" y2="40" stroke="#9C27B0" stroke-width="2.5"/>\n';
+    svg += '        <text x="40" y="44" font-size="12" fill="#333">Account Value (Meat + Items)</text>\n';
+    svg += '    </g>\n';
+    svg += '</svg>';
+    
+    return svg;
+}
+
+/**
  * Get all unique dates sorted chronologically
  */
 function getUniqueDates(entries) {
@@ -477,9 +764,11 @@ function generateSVG(dataPoints, includeItems) {
  * Generate full HTML page
  * @param {Array} dataPoints - Array of data points
  * @param {boolean} includeItems - Whether item values were included
+ * @param {Array} checkpointDataPoints - Array of checkpoint data points (optional)
  */
-function generateHTML(dataPoints, includeItems) {
+function generateHTML(dataPoints, includeItems, checkpointDataPoints) {
     var svg = generateSVG(dataPoints, includeItems);
+    var checkpointSvg = checkpointDataPoints ? generateCheckpointSVG(checkpointDataPoints) : null;
     
     // Calculate summary stats
     var summaryHtml = "";
@@ -539,6 +828,42 @@ function generateHTML(dataPoints, includeItems) {
         summaryHtml += '    </div>';
     }
     
+    // Checkpoint summary
+    var checkpointSummaryHtml = "";
+    if (checkpointDataPoints && checkpointDataPoints.length > 0) {
+        var cpLatest = checkpointDataPoints[checkpointDataPoints.length - 1];
+        var cpFirst = checkpointDataPoints[0];
+        var cpNetworthChange = cpLatest.totalNetWorth - cpFirst.totalNetWorth;
+        var cpChangeColor = cpNetworthChange >= 0 ? '#9C27B0' : '#f44336';
+        
+        checkpointSummaryHtml = '\n';
+        checkpointSummaryHtml += '    <div style="max-width: 1200px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">\n';
+        checkpointSummaryHtml += '        <h2 style="margin-top: 0; color: #333;">Checkpoint Summary (Historical Values)</h2>\n';
+        checkpointSummaryHtml += '        <table style="width: 100%; border-collapse: collapse;">\n';
+        checkpointSummaryHtml += '            <tr style="background: #f5f5f5;">\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Checkpoint Range</strong></td>\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;">' + cpFirst.displayDate + ' to ' + cpLatest.displayDate + ' (' + checkpointDataPoints.length + ' checkpoints)</td>\n';
+        checkpointSummaryHtml += '            </tr>\n';
+        checkpointSummaryHtml += '            <tr>\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Latest Liquid Meat</strong></td>\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;">' + formatValue(cpLatest.liquidMeat) + '</td>\n';
+        checkpointSummaryHtml += '            </tr>\n';
+        checkpointSummaryHtml += '            <tr style="background: #f5f5f5;">\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Latest Item Value (at checkpoint)</strong></td>\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;">' + formatValue(cpLatest.assetValue) + '</td>\n';
+        checkpointSummaryHtml += '            </tr>\n';
+        checkpointSummaryHtml += '            <tr>\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Latest Account Value</strong></td>\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd; color: #9C27B0;"><strong>' + formatValue(cpLatest.totalNetWorth) + '</strong></td>\n';
+        checkpointSummaryHtml += '            </tr>\n';
+        checkpointSummaryHtml += '            <tr style="background: #f5f5f5;">\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Net Worth Change</strong></td>\n';
+        checkpointSummaryHtml += '                <td style="padding: 10px; border: 1px solid #ddd; color: ' + cpChangeColor + ';">' + (cpNetworthChange >= 0 ? '+' : '') + formatValue(cpNetworthChange) + '</td>\n';
+        checkpointSummaryHtml += '            </tr>\n';
+        checkpointSummaryHtml += '        </table>\n';
+        checkpointSummaryHtml += '    </div>';
+    }
+    
     var today = new Date();
     var month = today.getMonth() + 1;
     var day = today.getDate();
@@ -566,6 +891,7 @@ function generateHTML(dataPoints, includeItems) {
     html += '            border-radius: 8px;\n';
     html += '            padding: 20px;\n';
     html += '            box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n';
+    html += '            margin-bottom: 20px;\n';
     html += '        }\n';
     html += '        h1 {\n';
     html += '            color: #333;\n';
@@ -586,6 +912,15 @@ function generateHTML(dataPoints, includeItems) {
     html += '            ' + svg + '\n';
     html += '        </div>\n';
     html += summaryHtml + '\n';
+    
+    // Add checkpoint graph if data exists
+    if (checkpointSvg) {
+        html += '        <div class="graph-container" style="margin-top: 40px;">\n';
+        html += '            ' + checkpointSvg + '\n';
+        html += '        </div>\n';
+        html += checkpointSummaryHtml + '\n';
+    }
+    
     html += '        <p class="generated">Generated on ' + dateStr + ' by networth_graph.js</p>\n';
     html += '    </div>\n';
     html += '</body>\n';
@@ -617,7 +952,10 @@ function main(args) {
         return;
     }
     
-    var html = generateHTML(dataPoints, includeItems);
+    // Build checkpoint data (uses pre-calculated item values from checkpoint time)
+    var checkpointDataPoints = buildCheckpointGraphData();
+    
+    var html = generateHTML(dataPoints, includeItems, checkpointDataPoints);
     
     // Print summary
     print("Graph data processed successfully!", "green");
@@ -649,6 +987,21 @@ function main(args) {
         print("  Liquid Meat Earn/Loss: " + (meatChange >= 0 ? "+" : "") + formatValue(meatChange), "teal");
         print("  Total Meat Earned: +" + formatValue(totalGains), "green");
         print("  Total Meat Spent: -" + formatValue(totalLosses), "red");
+    }
+    
+    // Print checkpoint summary
+    if (checkpointDataPoints && checkpointDataPoints.length > 0) {
+        print("", "teal");
+        print("=== Checkpoint Data (Historical Item Values) ===", "purple");
+        print("Checkpoint data points: " + checkpointDataPoints.length, "teal");
+        var cpLatest = checkpointDataPoints[checkpointDataPoints.length - 1];
+        var cpFirst = checkpointDataPoints[0];
+        print("Latest checkpoint: " + cpLatest.date, "teal");
+        print("  Liquid Meat: " + formatValue(cpLatest.liquidMeat), "teal");
+        print("  Item Value (at checkpoint): " + formatValue(cpLatest.assetValue), "teal");
+        print("  Account Value: " + formatValue(cpLatest.totalNetWorth), "purple");
+        var cpChange = cpLatest.totalNetWorth - cpFirst.totalNetWorth;
+        print("  Net Worth Change: " + (cpChange >= 0 ? "+" : "") + formatValue(cpChange), cpChange >= 0 ? "green" : "red");
     }
     
     // Save HTML to file
