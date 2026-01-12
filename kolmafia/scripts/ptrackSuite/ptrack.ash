@@ -14,7 +14,7 @@ void printBreakpointListComparison();
 void printHelp();
 void ptrackCheckUpdate();
 
-int version = 5;
+int version = 7;
 string[int] updates;
 updates[0] = "Update Log Added";
 updates[1] = "File compare added. Check your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and use them to compare across days!";
@@ -22,6 +22,8 @@ updates[2] = "Ptrack will now handle duplicate breakpoint names by giving the re
 updates[3] = "Ptrack has an option to use Irrat's mall price data for more accurate item values. Thanks Jimmyking for PR";
 updates[4] = "Ptrack supports blacklisted items in case you want to not consider any items. Will not affect any saved data as this is only considered when comparing two breakpoints. Thanks Jimmyking for the slick regex";
 updates[5] = "Ptrack now has a sweet graphing generator. This graphs your liquid meat over time!";
+updates[6] = "Ptrack now logs accountval data at each checkpoint. This will show up as a separate graph in the graphing generator.";
+updates[7] = "Ptrack can log accountval data at each checkpoint. WIP to add to graphs. Highly recommend enabling via ptrack help so you can start logging the data.";
 
 void printHelp() {
     print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
@@ -37,6 +39,7 @@ void printHelp() {
     print_html("<b>fileCompare (date1) (bp1) (date2) (bp2)</b> - Go into your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and find two breakpoints you would like to compare. File format is as follows: <font color=008080>date breakpoint.txt</font>. Do not include the .txt!");
     print("Configuration:", "teal");
     print_html("<b>useKolItemPrice (true/false)</b> - Use Irrat's KolItemPrice repo for more accurate mall prices. The only valid arguments are \"true\" or \"false\".");
+    print_html("<b>logAccountval (true/false)</b> - When enabled, runs accountval at each checkpoint and logs worth/MrA value/liquid meat to accountval_checkpoints.txt. Currently: " + get_property("checkpoints_log_accountval"));
     print_html("<b>clearBlacklist</b> - Empties blacklist so all items are considered for profit tracking.");
     print_html("<b>addBlacklist (item name)</b> - Adds an item to the blacklist. Give the item name as parameter. Will not affect data stored, only used when comparing breakpoints.");
     print_html("<b>addPriceOverride (item id) (price)</b> - Adds an item to the price override list. Give the item id and price as parameters. This will override the price of the item when comparing breakpoints.");
@@ -261,6 +264,20 @@ void main(string option) {
                 if(i + 1 < commands.count())
                 {
                     useKolItemPriceSetting(commands[i+1].to_lower_case());
+                } else {
+                    print("Please provide one arg true/false", "red");
+                }
+                return;
+            case "logaccountval":
+                if(i + 1 < commands.count())
+                {
+                    string val = commands[i+1].to_lower_case();
+                    if (val == "true" || val == "false") {
+                        set_property("checkpoints_log_accountval", val);
+                        print("checkpoints_log_accountval set to " + val, "teal");
+                    } else {
+                        print("true or false are the only valid options", "red");
+                    }
                 } else {
                     print("Please provide one arg true/false", "red");
                 }

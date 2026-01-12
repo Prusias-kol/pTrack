@@ -2,6 +2,8 @@ script ProfitTracking;
 notify the dictator;
 import DicsLibrary;
 
+void LogAccountvalCheckpoint(string event);
+
 // To use, import the script and call ProfitLog whenever you want to create a logging point and ProfitCompare (or ProfitCompareAll) when you want the results between two.
 
 string Yesterdate() {
@@ -67,7 +69,7 @@ void LogNetworthCheckpoint(string event) {
 	// If slow, modify to only log on start events
 	// if ( event != "start" )
 	// 	return;
-	
+	print("Profit: Logging networth checkpoint for event "+event,"fuchsia");
 	
 	record networthevent { int meat; int calculateditemvalue; };
 	networthevent [string, string] networthlist;
@@ -89,6 +91,87 @@ void LogNetworthCheckpoint(string event) {
 	if ( !dummy )
 		abort("Profit: Failed to write networth checkpoint");
 	print("Profit: Logged networth checkpoint (meat: " + newest.meat + ", items: " + newest.calculateditemvalue + ")", "fuchsia");
+	
+	// Optionally log accountval data
+	if ( get_property("checkpoints_log_accountval").to_boolean() ) {
+		LogAccountvalCheckpoint(event);
+	}
+}
+
+// Helper function to parse accountval output
+record accountval_parsed { int worth; float mra_value; int liquid_meat; int mall_extinct_items; };
+
+accountval_parsed parse_accountval_output(string output) {
+	accountval_parsed result;
+	
+	// Parse mall extinct items: "There were X mall extinct items!"
+	matcher extinct_matcher = create_matcher("There were ([0-9,]+) mall extinct items!", output);
+	if ( find(extinct_matcher) ) {
+		string extinct_str = replace_string(group(extinct_matcher, 1), ",", "");
+		result.mall_extinct_items = extinct_str.to_int();
+	}
+	
+	// Parse total worth: "You are worth X meat!"
+	matcher worth_matcher = create_matcher("You are worth ([0-9,]+) meat!", output);
+	if ( find(worth_matcher) ) {
+		string worth_str = replace_string(group(worth_matcher, 1), ",", "");
+		result.worth = worth_str.to_int();
+	}
+	
+	// Parse MrA value: "that's $X"
+	matcher mra_matcher = create_matcher("that's \\$([0-9,]+\\.?[0-9]*)", output);
+	if ( find(mra_matcher) ) {
+		string mra_str = replace_string(group(mra_matcher, 1), ",", "");
+		result.mra_value = mra_str.to_float();
+	}
+	
+	// Parse liquid meat: "This doesn't include your X meat!"
+	matcher meat_matcher = create_matcher("This doesn't include your ([0-9,]+) meat!", output);
+	if ( find(meat_matcher) ) {
+		string meat_str = replace_string(group(meat_matcher, 1), ",", "");
+		result.liquid_meat = meat_str.to_int();
+	}
+	
+	return result;
+}
+
+void LogAccountvalCheckpoint(string event) {
+	print("Profit: Logging accountval checkpoint","fuchsia");
+	
+	// Run accountval (all items) and capture output
+	string output = cli_execute_output("accountval text=plain");
+	accountval_parsed all_items = parse_accountval_output(output);
+	
+	// Run accountval !bound (unbound items only) and capture output
+	string output_unbound = cli_execute_output("accountval !bound text=plain");
+	accountval_parsed unbound_items = parse_accountval_output(output_unbound);
+	
+	// Store in accountval_checkpoints.txt
+	record accountvalevent { 
+		int worth; float mra_value; int liquid_meat; int mall_extinct_items;
+		int unbound_worth; float unbound_mra_value; int unbound_liquid_meat; int unbound_mall_extinct_items;
+	};
+	accountvalevent [string, string] accountvallist;
+	file_to_map("/Profit Tracking/"+my_name()+"/accountval_checkpoints.txt", accountvallist);
+	
+	accountvalevent newest;
+	// All items values
+	newest.worth = all_items.worth;
+	newest.mra_value = all_items.mra_value;
+	newest.liquid_meat = all_items.liquid_meat;
+	newest.mall_extinct_items = all_items.mall_extinct_items;
+	// Unbound items values
+	newest.unbound_worth = unbound_items.worth;
+	newest.unbound_mra_value = unbound_items.mra_value;
+	newest.unbound_liquid_meat = unbound_items.liquid_meat;
+	newest.unbound_mall_extinct_items = unbound_items.mall_extinct_items;
+	
+	accountvallist[today_to_string(), event] = newest;
+	
+	boolean dummy = map_to_file(accountvallist, "/Profit Tracking/"+my_name()+"/accountval_checkpoints.txt");
+	if ( !dummy )
+		abort("Profit: Failed to write accountval checkpoint");
+	print("Profit: Logged accountval - all: " + to_string(all_items.worth, "%,d") + " ($" + to_string(all_items.mra_value, "%.2f") + "), unbound: " + to_string(unbound_items.worth, "%,d") + " ($" + to_string(unbound_items.mra_value, "%.2f") + ")", "fuchsia");
 }
 
 void ProfitLog(string event, boolean destruct) {
