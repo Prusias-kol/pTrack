@@ -63,9 +63,37 @@ void LogMeat(string event, boolean destruct) {
 	}
 }
 
+void LogNetworthCheckpoint(string event) {
+	// If slow, modify to only log on start events
+	// if ( event != "start" )
+	// 	return;
+	
+	record networthevent { int meat; int calculateditemvalue; };
+	networthevent [string, string] networthlist;
+	file_to_map("/Profit Tracking/"+my_name()+"/networth_checkpoints.txt", networthlist);
+	
+	networthevent newest;
+	newest.meat = my_meat() + my_storage_meat() + my_closet_meat();
+	
+	// Calculate total item value using current prices
+	int totalItemValue = 0;
+	foreach it in $items[]
+		if ( total_amount(it) != 0 )
+			totalItemValue += total_amount(it) * itemValue(it);
+	
+	newest.calculateditemvalue = totalItemValue;
+	networthlist[today_to_string(), event] = newest;
+	
+	boolean dummy = map_to_file(networthlist, "/Profit Tracking/"+my_name()+"/networth_checkpoints.txt");
+	if ( !dummy )
+		abort("Profit: Failed to write networth checkpoint");
+	print("Profit: Logged networth checkpoint (meat: " + newest.meat + ", items: " + newest.calculateditemvalue + ")", "fuchsia");
+}
+
 void ProfitLog(string event, boolean destruct) {
 	LogMeat(event,destruct);
 	LogItems(event,destruct);
+	LogNetworthCheckpoint(event);
 	if ( !ProfitLogExists(today_to_string(),event) )
 		abort("Couldn't find the profit log we just tried to make: "+event);
 }
