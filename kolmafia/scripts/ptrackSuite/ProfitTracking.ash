@@ -67,6 +67,7 @@ void LogNetworthCheckpoint(string event) {
 	// If slow, modify to only log on start events
 	// if ( event != "start" )
 	// 	return;
+	return;
 	
 	record networthevent { int meat; int calculateditemvalue; };
 	networthevent [string, string] networthlist;
