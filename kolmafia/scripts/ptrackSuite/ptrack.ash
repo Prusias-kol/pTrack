@@ -14,7 +14,7 @@ void printBreakpointListComparison();
 void printHelp();
 void ptrackCheckUpdate();
 
-int version = 7;
+int version = 9;
 string[int] updates;
 updates[0] = "Update Log Added";
 updates[1] = "File compare added. Check your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and use them to compare across days!";
@@ -24,6 +24,8 @@ updates[4] = "Ptrack supports blacklisted items in case you want to not consider
 updates[5] = "Ptrack now has a sweet graphing generator. This graphs your liquid meat over time!";
 updates[6] = "Ptrack now logs accountval data at each checkpoint. This will show up as a separate graph in the graphing generator.";
 updates[7] = "Ptrack can log accountval data at each checkpoint. WIP to add to graphs. Highly recommend enabling via ptrack help so you can start logging the data.";
+updates[8] = "Ptrack now includes a dependency-free Checkpoint Explorer in the relay browser's Relay Scripts menu.";
+updates[9] = "Ptrack has a GUI to view your checkpoints and graphs";
 
 void printHelp() {
     print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
@@ -47,6 +49,7 @@ void printHelp() {
     print("Graphing Commands:", "teal");
     print_html("<b>graph</b> - Generates a liquid meat tracking graph (fast). Outputs an HTML file you can open in your browser.");
     print_html("<b>graphWithItems</b> - Generates a net worth graph including item values (slower, but shows asset value and total account value).");
+    print_html("<b>Checkpoint Explorer</b> - Open <em>relay_ptrack.js</em> from the relay browser's Relay Scripts menu to compare any two checkpoints and generate graphs.");
 
     ptrackCheckUpdate();
 }
