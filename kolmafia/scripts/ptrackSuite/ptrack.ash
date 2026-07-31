@@ -13,8 +13,9 @@ void printBreakpointList();
 void printBreakpointListComparison();
 void printHelp();
 void ptrackCheckUpdate();
+void redeemScreege();
 
-int version = 9;
+int version = 10;
 string[int] updates;
 updates[0] = "Update Log Added";
 updates[1] = "File compare added. Check your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and use them to compare across days!";
@@ -26,6 +27,7 @@ updates[6] = "Ptrack now logs accountval data at each checkpoint. This will show
 updates[7] = "Ptrack can log accountval data at each checkpoint. WIP to add to graphs. Highly recommend enabling via ptrack help so you can start logging the data.";
 updates[8] = "Ptrack now includes a dependency-free Checkpoint Explorer in the relay browser's Relay Scripts menu.";
 updates[9] = "Ptrack has a GUI to view your checkpoints and graphs";
+updates[10] = "Added redeemScreege to use or autosell all Mr. Screege's spectacles drops for maximum Meat.";
 
 void printHelp() {
     print_html("<font color=eda800><b>ptrack Breakpoint Wrapper Commands</b></font>");
@@ -38,6 +40,7 @@ void printHelp() {
     print_html("<b>list</b> - List today's breakpoints.");
     print_html("<b>recap</b> - Recaps all breakpoints and their differences as well as your first and last breakpoints.");
     print_html("<b>coinvalue</b> - Examines all coinmaster currencies and attempts to value them.");
+    print_html("<b>redeemScreege</b> - Cashes out all Mr. Screege's spectacles drops in inventory. Uses items when possible for the higher payout, and autosells the rest.");
     print_html("<b>fileCompare (date1) (bp1) (date2) (bp2)</b> - Go into your <font color=008080>KolMafia/data/Profit Tracking/"+my_name()+"/inventory</font> files and find two breakpoints you would like to compare. File format is as follows: <font color=008080>date breakpoint.txt</font>. Do not include the .txt!");
     print("Configuration:", "teal");
     print_html("<b>useKolItemPrice (true/false)</b> - Use Irrat's KolItemPrice repo for more accurate mall prices. The only valid arguments are \"true\" or \"false\".");
@@ -208,6 +211,67 @@ void addPriceOverrideItem(string itemToAdd, int price) {
     }
 }
 
+void redeemScreege() {
+    boolean[item] useItems = $items[
+        ancient vinyl coin purse,
+        duct tape wallet,
+        fat wallet,
+        old coin purse,
+        old leather wallet,
+        pixel coin,
+        pixellated moneybag,
+        shiny stones,
+        solid gold jewel,
+        stolen meatpouch
+    ];
+    boolean[item] autosellItems = $items[
+        1952 Mickey Mantle card,
+        decomposed boot,
+        dollar-sign bag,
+        half of a gold tooth,
+        huge gold coin,
+        leather bookmark,
+        massive gemstone,
+        pile of gold coins
+    ];
+
+    int startingMeat = my_meat();
+    int usedCount = 0;
+    int autosoldCount = 0;
+
+    foreach it in useItems {
+        int amount = item_amount(it);
+        if (amount > 0) {
+            use(amount, it);
+            int redeemed = amount - item_amount(it);
+            usedCount += redeemed;
+            if (redeemed < amount) {
+                print("Could not use " + (amount - redeemed) + " " + it + ".", "red");
+            }
+        }
+    }
+
+    foreach it in autosellItems {
+        int amount = item_amount(it);
+        if (amount > 0) {
+            autosell(amount, it);
+            int redeemed = amount - item_amount(it);
+            autosoldCount += redeemed;
+            if (redeemed < amount) {
+                print("Could not autosell " + (amount - redeemed) + " " + it + ".", "red");
+            }
+        }
+    }
+
+    if (usedCount == 0 && autosoldCount == 0) {
+        print("No Mr. Screege's spectacles drops found in inventory.", "teal");
+        return;
+    }
+
+    print("Redeemed " + usedCount + " Screege drops by using them and " + autosoldCount + " by autoselling them.", "teal");
+    print("Meat gained: " + (my_meat() - startingMeat), "teal");
+}
+
 
 void main(string option) {
     if (get_property("prusias_profitTracking_use_irrat_list") == "") {
@@ -256,6 +320,9 @@ void main(string option) {
                 return;
             case "coinvalue":
                 cli_execute("coinvalue");
+                return;
+            case "redeemscreege":
+                redeemScreege();
                 return;
             case "list":
                 printBreakpointList();
