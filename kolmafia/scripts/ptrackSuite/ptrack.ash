@@ -246,7 +246,7 @@ void redeemScreege() {
             int redeemed = amount - item_amount(it);
             usedCount += redeemed;
             if (redeemed < amount) {
-                print("Could not use " + (amount - redeemed) + " " + it + ".", "red");
+                print("Could not use " + to_string(amount - redeemed, "%,d") + " " + it + ".", "red");
             }
         }
     }
@@ -258,7 +258,7 @@ void redeemScreege() {
             int redeemed = amount - item_amount(it);
             autosoldCount += redeemed;
             if (redeemed < amount) {
-                print("Could not autosell " + (amount - redeemed) + " " + it + ".", "red");
+                print("Could not autosell " + to_string(amount - redeemed, "%,d") + " " + it + ".", "red");
             }
         }
     }
@@ -268,8 +268,8 @@ void redeemScreege() {
         return;
     }
 
-    print("Redeemed " + usedCount + " Screege drops by using them and " + autosoldCount + " by autoselling them.", "teal");
-    print("Meat gained: " + (my_meat() - startingMeat), "teal");
+    print("Redeemed " + to_string(usedCount, "%,d") + " Screege drops by using them and " + to_string(autosoldCount, "%,d") + " by autoselling them.", "teal");
+    print("Meat gained: " + to_string(my_meat() - startingMeat, "%,d"), "teal");
 }
 
 
